@@ -1,0 +1,78 @@
+Mongo Replication
+
+
+1: Generate key file using openssl:
+
+openssl rand -base64 756 > mongoKey
+chmod 400 mongoKey
+
+2: Copy mongoKey to /data/db
+
+2: Run Docker container
+
+docker run --restart always -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=root -e MONGO_INITDB_ROOT_PASSWORD=yoursuperpassword -v /root/data/master:/data/db --name mongo-repl -d mongo --replSet "mongo-repl" --keyFile /data/db/mongoKey
+
+3: Create another server (for new node)
+
+4: Copy same mongoKey file to /data/db
+
+5: run container
+
+docker run --restart always -p 27017:27017 -v /data/db:/data/db --name mongo-repl -d mongo --replSet "mongo-repl" --keyFile /data/db/mongoKey
+
+6: Go to the first server. Login to mongo shell
+
+7: Go inside the container and connect to the database.
+
+mongo -u <Root_USER_NAME> -p <ROOT_PASSWORD> --authenticationDatabase admin
+
+8: create replica set conf to initialise Replica set.
+
+rsconf = {
+"_id" : "<Replica_Set_name>",
+"members" : [
+{
+"_id" : 0,
+"host" : "<SERVER_PUBLIC_IP>:27017"
+"arbiterOnly" : false,
+"buildIndexes" : true,
+"hidden" : false,
+"priority" : 1,
+"tags" : {
+      },
+"slaveDelay" : NumberLong(0),
+"votes" : 1
+
+},
+#For Slave
+{
+"_id" : 1,
+"host" : "<ANOTHER_SERVER_PUBLIC_IP>:27017"
+"arbiterOnly" : false,
+"buildIndexes" : true,
+"hidden" : false,
+"priority" : 0.5,
+"tags" : {
+      },
+"slaveDelay" : NumberLong(0),
+"votes" : 1
+},
+{
+"_id" : 2,
+"host" : "<ANOTHER_SERVER_PUBLIC_IP>:27017"
+"arbiterOnly" : true,
+"buildIndexes" : true,
+"hidden" : false,
+"priority" : 0,
+"tags" : {
+      },
+"slaveDelay" : NumberLong(0),
+"votes" : 1
+}
+]
+}
+
+9: Initiate Replicaset using this command:
+
+rs.initiate(rsconf);
+
